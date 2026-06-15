@@ -150,12 +150,17 @@ app.get("/api/health", async (req, res) => {
 });
 
 // ── Start Server ──────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`\n⚡ Habit Tracker API running on http://localhost:${PORT}`);
-  console.log(`   Database: ${MONGODB_DB}`);
-  console.log(`   Endpoints:`);
-  console.log(`     GET    /api/state`);
-  console.log(`     PUT    /api/state`);
-  console.log(`     DELETE /api/state`);
-  console.log(`     GET    /api/health\n`);
-});
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`\n⚡ Habit Tracker API running on http://localhost:${PORT}`);
+    console.log(`   Database: ${MONGODB_DB}`);
+    console.log(`   Endpoints:`);
+    console.log(`     GET    /api/state`);
+    console.log(`     PUT    /api/state`);
+    console.log(`     DELETE /api/state`);
+    console.log(`     GET    /api/health\n`);
+  });
+}
+
+// Export for Vercel Serverless Functions
+export default app;
