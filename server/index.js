@@ -3,7 +3,7 @@ import cors from "cors";
 import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({ override: true });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -15,7 +15,6 @@ app.use(express.json({ limit: "5mb" }));
 const MONGODB_URI = process.env.MONGODB_URI;
 const MONGODB_DB = process.env.MONGODB_DB || "habit-tracker";
 const COLLECTION = "state";
-const STATE_ID = "user-state"; // Single-user app, fixed document ID
 
 let db = null;
 
@@ -33,16 +32,51 @@ async function connectDB() {
   }
 }
 
+// ── Auth Middleware ──────────────────────────────────────
+const USERNAME = process.env.userName?.trim();
+const PASSWORD = process.env.pass?.trim();
+
+app.post("/api/login", (req, res) => {
+  const { username, password } = req.body;
+  if (!USERNAME || !PASSWORD) {
+    return res.status(500).json({ error: "Server auth not configured" });
+  }
+  if (username === USERNAME && password === PASSWORD) {
+    // Generate token tying the session to the username
+    const token = Buffer.from(username).toString("base64");
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ error: "Invalid credentials" });
+  }
+});
+
+function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  
+  const token = authHeader.split(" ")[1];
+  const decodedUsername = Buffer.from(token, "base64").toString("ascii");
+
+  if (decodedUsername === USERNAME) {
+    req.user = decodedUsername;
+    next();
+  } else {
+    res.status(401).json({ error: "Unauthorized" });
+  }
+}
+
 // ── API Routes ────────────────────────────────────────
 
 /**
  * GET /api/state
  * Returns the current habit tracker state from MongoDB.
  */
-app.get("/api/state", async (req, res) => {
+app.get("/api/state", requireAuth, async (req, res) => {
   try {
     const database = await connectDB();
-    const doc = await database.collection(COLLECTION).findOne({ _id: STATE_ID });
+    const doc = await database.collection(COLLECTION).findOne({ _id: req.user });
 
     if (!doc) {
       // Return default state if no document exists
@@ -67,7 +101,7 @@ app.get("/api/state", async (req, res) => {
  * PUT /api/state
  * Upserts the entire habit tracker state to MongoDB.
  */
-app.put("/api/state", async (req, res) => {
+app.put("/api/state", requireAuth, async (req, res) => {
   try {
     const state = req.body;
 
@@ -78,8 +112,8 @@ app.put("/api/state", async (req, res) => {
 
     const database = await connectDB();
     await database.collection(COLLECTION).replaceOne(
-      { _id: STATE_ID },
-      { _id: STATE_ID, ...state },
+      { _id: req.user },
+      { _id: req.user, ...state },
       { upsert: true }
     );
 
@@ -94,10 +128,10 @@ app.put("/api/state", async (req, res) => {
  * DELETE /api/state
  * Resets the state in MongoDB (for clear data).
  */
-app.delete("/api/state", async (req, res) => {
+app.delete("/api/state", requireAuth, async (req, res) => {
   try {
     const database = await connectDB();
-    await database.collection(COLLECTION).deleteOne({ _id: STATE_ID });
+    await database.collection(COLLECTION).deleteOne({ _id: req.user });
     res.json({ success: true });
   } catch (err) {
     console.error("DELETE /api/state error:", err.message);

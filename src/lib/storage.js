@@ -46,7 +46,19 @@ function getDefaultState() {
  */
 export async function loadState() {
   try {
-    const res = await fetch(`${API_BASE}/state`);
+    const token = localStorage.getItem("auth_token");
+    const res = await fetch(`${API_BASE}/state`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    if (res.status === 401) {
+      localStorage.removeItem("auth_token");
+      window.dispatchEvent(new Event("auth_unauthorized"));
+      throw new Error("Unauthorized");
+    }
+    
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     const state = await res.json();
     // Cache in localStorage for offline fallback
@@ -67,9 +79,13 @@ export async function saveState(state) {
   saveToLocalStorage(state);
 
   try {
+    const token = localStorage.getItem("auth_token");
     const res = await fetch(`${API_BASE}/state`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(state),
     });
     if (!res.ok) throw new Error(`API error: ${res.status}`);

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useHabitTracker } from "./hooks/useHabitTracker";
 import { MODULES } from "./lib/tasks";
 import StreakCounter from "./components/StreakCounter";
@@ -10,8 +10,19 @@ import MilestoneBadges from "./components/MilestoneBadges";
 import WarningOverlay from "./components/WarningOverlay";
 import SettingsMenu from "./components/SettingsMenu";
 import QuoteOfDay from "./components/QuoteOfDay";
+import Login from "./components/Login";
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!localStorage.getItem("auth_token")
+  );
+
+  useEffect(() => {
+    const handleUnauthorized = () => setIsAuthenticated(false);
+    window.addEventListener("auth_unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("auth_unauthorized", handleUnauthorized);
+  }, []);
+
   const {
     state,
     today,
@@ -35,29 +46,13 @@ export default function App() {
     day: "numeric",
   });
 
-  // beforeunload alert — remind user to export backup
-  useEffect(() => {
-    const handler = (e) => {
-      // Don't interfere with export downloads
-      if (window.__exportingBackup) return;
 
-      if (!isAllComplete) {
-        e.preventDefault();
-        e.returnValue =
-          "You have uncompleted tasks! Your streak is at risk. Consider exporting a backup before leaving.";
-        return e.returnValue;
-      }
-      e.preventDefault();
-      e.returnValue =
-        "Remember to export your streak backup regularly! Go to ⚙ Settings → Export Backup.";
-      return e.returnValue;
-    };
-
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [isAllComplete]);
 
   // Loading screen
+  if (!isAuthenticated) {
+    return <Login onLogin={() => setIsAuthenticated(true)} />;
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-dvh bg-bg flex items-center justify-center">
