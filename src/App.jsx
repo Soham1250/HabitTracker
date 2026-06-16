@@ -138,6 +138,7 @@ export default function App() {
         <div className="mt-4">
           <WorkoutModule
             workout={workout}
+            tasks={todayData.tasks}
             isChecked={!!todayData.tasks["workout"]}
             onToggle={toggleTask}
           />

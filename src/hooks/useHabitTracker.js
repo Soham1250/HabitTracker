@@ -91,6 +91,21 @@ export function useHabitTracker() {
         const newTasks = { ...prevToday.tasks };
         newTasks[taskId] = !newTasks[taskId];
 
+        const dayOfWeek = new Date().getDay();
+        const workoutData = WORKOUT_SCHEDULE[dayOfWeek];
+        const exerciseIds = workoutData.exercises?.map(e => e.id) || [];
+
+        // If toggling a sub-exercise, update the main "workout" status
+        if (exerciseIds.includes(taskId)) {
+          const allExercisesDone = exerciseIds.every(id => newTasks[id]);
+          newTasks["workout"] = allExercisesDone;
+        } 
+        // If toggling the main workout directly, sync all sub-exercises
+        else if (taskId === "workout") {
+          const isDone = newTasks["workout"];
+          exerciseIds.forEach(id => { newTasks[id] = isDone; });
+        }
+
         const allIds = getAllTaskIds(new Date().getDay());
         const completedCount = allIds.filter((id) => newTasks[id]).length;
         const total = getTotalTaskCount();
