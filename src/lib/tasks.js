@@ -29,59 +29,61 @@ export const MODULES = [
 ];
 
 export const WORKOUT_SCHEDULE = {
-  0: { label: "Rest Day", icon: "💤", autoComplete: true, exercises: [] },
+  0: { 
+    label: "Rest Day", icon: "💤", autoComplete: true, exercises: [] 
+  },
   1: { 
     label: "Chest Day", icon: "🏋️", autoComplete: false, 
     exercises: [
-      { id: "chest-bench", label: "Flat Bench Press (3x10)" },
-      { id: "chest-incline", label: "Incline DB Press (3x10)" },
-      { id: "chest-dips", label: "Chest Dips (3x10)" },
-      { id: "chest-cable", label: "Cable Crossovers (3x15)" }
+      { id: "chest-incline", label: "Incline DB Press (4x8-10)" },
+      { id: "chest-flat", label: "Flat Machine/BB Press (3x8-10)" },
+      { id: "chest-cable", label: "High-to-Low Cable Crossovers (3x10-12)" },
+      { id: "chest-dips", label: "Weighted Dips (3xFailure)" }
     ] 
   },
   2: { 
-    label: "Back Day", icon: "🏋️", autoComplete: false, 
+    label: "Shoulder Day", icon: "💪", autoComplete: false, 
     exercises: [
-      { id: "back-deadlift", label: "Deadlifts (3x5)" },
-      { id: "back-pullup", label: "Pull-ups (3xMax)" },
-      { id: "back-row", label: "Barbell Rows (3x10)" },
-      { id: "back-lat", label: "Lat Pulldowns (3x12)" }
+      { id: "shoulder-press", label: "Seated DB Overhead Press (4x8-10)" },
+      { id: "shoulder-lateral", label: "DB/Cable Lateral Raises (4x12-15)" },
+      { id: "shoulder-facepull", label: "Cable Face Pulls (4x15)" },
+      { id: "shoulder-shrug", label: "DB Shrugs (3x10-12)" }
     ] 
   },
   3: { 
-    label: "Leg Day", icon: "🦵", autoComplete: false, 
+    label: "Back Day", icon: "🏋️", autoComplete: false, 
     exercises: [
-      { id: "leg-squat", label: "Barbell Squats (3x8)" },
-      { id: "leg-press", label: "Leg Press (3x12)" },
-      { id: "leg-rdl", label: "Romanian Deadlifts (3x10)" },
-      { id: "leg-calf", label: "Calf Raises (4x15)" }
+      { id: "back-latpulldown", label: "Wide-Grip Lat Pulldowns (4x8-10)" },
+      { id: "back-row", label: "BB Bent-Over Rows (4x8-10)" },
+      { id: "back-cablerow", label: "Seated Cable Rows (3x10-12)" },
+      { id: "back-straightarm", label: "Straight-Arm Pulldowns (3x12-15)" }
     ] 
   },
   4: { 
-    label: "Shoulder Day", icon: "💪", autoComplete: false, 
+    label: "Arms Day", icon: "💪", autoComplete: false, 
     exercises: [
-      { id: "shoulder-press", label: "Overhead Press (3x8)" },
-      { id: "shoulder-lateral", label: "Lateral Raises (3x15)" },
-      { id: "shoulder-facepull", label: "Face Pulls (3x12)" },
-      { id: "shoulder-front", label: "Front Raises (3x12)" }
+      { id: "arm-tricepext", label: "Overhead Cable Tricep Ext (4x10-12)" },
+      { id: "arm-bicep", label: "BB/EZ-Bar Bicep Curls (4x8-10)" },
+      { id: "arm-pushdown", label: "Triceps Rope Pushdowns (3x10-12)" },
+      { id: "arm-hammer", label: "DB Hammer Curls (3x10-12)" }
     ] 
   },
   5: { 
-    label: "Arms Day", icon: "💪", autoComplete: false, 
+    label: "Leg Day", icon: "🦵", autoComplete: false, 
     exercises: [
-      { id: "arm-bicep", label: "Barbell Bicep Curls (3x10)" },
-      { id: "arm-tricep", label: "Tricep Pushdowns (3x12)" },
-      { id: "arm-hammer", label: "Hammer Curls (3x12)" },
-      { id: "arm-skull", label: "Skull Crushers (3x10)" }
+      { id: "leg-squat", label: "BB Squats / Heavy Leg Press (4x8-10)" },
+      { id: "leg-rdl", label: "Romanian Deadlifts (4x8-10)" },
+      { id: "leg-ext", label: "Leg Extensions (3x12-15)" },
+      { id: "leg-calf", label: "Standing Calf Raises (4x15-20)" }
     ] 
   },
   6: { 
     label: "Core / Recovery", icon: "🧘", autoComplete: false, 
     exercises: [
-      { id: "core-plank", label: "Planks (3x1 min)" },
-      { id: "core-twist", label: "Russian Twists (3x20)" },
-      { id: "core-legraise", label: "Hanging Leg Raises (3x15)" },
-      { id: "core-foamroll", label: "Foam Rolling (10 min)" }
+      { id: "core-legraise", label: "Hanging Leg Raises (4x10-15)" },
+      { id: "core-crunch", label: "Weighted Cable Crunches (3x12-15)" },
+      { id: "core-plank", label: "Plank (3x60s)" },
+      { id: "core-cardio", label: "Zone 2 Cardio (15-20 min)" }
     ] 
   },
 };
