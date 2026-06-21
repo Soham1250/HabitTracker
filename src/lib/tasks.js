@@ -1,6 +1,31 @@
 /**
  * Static task definitions and workout schedule for the Habit Tracker.
+ *
+ * Architecture:
+ * - Tasks can optionally have `subtasks` arrays. If present, the task is a
+ *   non-interactive parent that auto-completes when all subtasks are checked.
+ * - Workout exercises have `sets` arrays. Each set is an individually checkable
+ *   sub-task. The exercise auto-completes when all sets are done.
+ * - Only leaf-level IDs (subtask IDs, set IDs, simple task IDs) count toward
+ *   daily progress. Parent IDs are excluded from counting.
  */
+
+// ── Helper to generate numbered sub-tasks ──────────────────────────────────
+function generateNumberedSubtasks(prefix, label, count) {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `${prefix}${i + 1}`,
+    label: `${label} Q${i + 1}`,
+  }));
+}
+
+function generateSets(exerciseId, count, reps) {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `${exerciseId}-s${i + 1}`,
+    label: `Set ${i + 1} (${reps})`,
+  }));
+}
+
+// ── Module Definitions ─────────────────────────────────────────────────────
 
 export const MODULES = [
   {
@@ -8,12 +33,37 @@ export const MODULES = [
     title: "The Morning Vanguard",
     subtitle: "QRE Block",
     tasks: [
-      { id: "quant", label: "30-45 min Quant" },
-      { id: "editorial", label: "English Editorial" },
-      { id: "di-set", label: "1 DI Set" },
-      { id: "core-quants", label: "10 Core Quants" },
-      { id: "puzzle", label: "1 3-Variable Puzzle" },
-      { id: "reasoning", label: "10 Core Reasoning" },
+      { id: "editorial", label: "Read the Daily English Editorial" },
+      {
+        id: "di-set",
+        label: "Solve 1 DI Set (Pre-decode Master Table in <2 min)",
+      },
+      {
+        id: "quant-arithmetic",
+        label: "Quant Arithmetic (Adda247 Daksh)",
+        subtasks: [
+          ...generateNumberedSubtasks("quant-f", "Foundation", 10),
+          ...generateNumberedSubtasks("quant-m", "Moderate", 10),
+        ],
+      },
+      {
+        id: "puzzle-seating",
+        label: "Puzzle/Seating Sets",
+        subtasks: [
+          { id: "puzzle-1", label: "Set 1" },
+          { id: "puzzle-2", label: "Set 2" },
+          { id: "puzzle-3", label: "Set 3" },
+          { id: "puzzle-4", label: "Set 4" },
+        ],
+      },
+      {
+        id: "reasoning-sequential",
+        label: "Reasoning Sequential (Current Phase)",
+        subtasks: [
+          ...generateNumberedSubtasks("reasoning-f", "Foundation", 10),
+          ...generateNumberedSubtasks("reasoning-m", "Moderate", 10),
+        ],
+      },
     ],
   },
   {
@@ -21,70 +71,183 @@ export const MODULES = [
     title: "The Evening Pivot",
     subtitle: "IT & GA Block",
     tasks: [
-      { id: "spotlight", label: "Spotlight Magazine" },
-      { id: "gate", label: "GATE CS Theory" },
-      { id: "leetcode", label: "LeetCode POTD" },
+      { id: "spotlight", label: "Study/Revise Spotlight Magazine" },
+      { id: "gate", label: "GATE CS Theory & MCQs (Active: DBMS)" },
+      { id: "leetcode", label: "Solve LeetCode POTD" },
     ],
   },
 ];
 
+// ── Workout Schedule (Per-Set Sub-tasks) ───────────────────────────────────
+
 export const WORKOUT_SCHEDULE = {
-  0: { 
-    label: "Rest Day", icon: "💤", autoComplete: true, exercises: [] 
+  0: {
+    label: "Rest Day",
+    icon: "💤",
+    autoComplete: true,
+    exercises: [],
   },
-  1: { 
-    label: "Chest Day", icon: "🏋️", autoComplete: false, 
+  1: {
+    label: "Chest Day",
+    icon: "🏋️",
+    autoComplete: false,
     exercises: [
-      { id: "chest-incline", label: "Incline DB Press (4x8-10)" },
-      { id: "chest-flat", label: "Flat Machine/BB Press (3x8-10)" },
-      { id: "chest-cable", label: "High-to-Low Cable Crossovers (3x10-12)" },
-      { id: "chest-dips", label: "Weighted Dips (3xFailure)" }
-    ] 
+      {
+        id: "chest-incline",
+        label: "Incline Dumbbell Press",
+        sets: generateSets("chest-incline", 4, "8-10 reps"),
+      },
+      {
+        id: "chest-flat",
+        label: "Flat Machine/BB Press",
+        sets: generateSets("chest-flat", 3, "8-10 reps"),
+      },
+      {
+        id: "chest-cable",
+        label: "High-to-Low Cable Crossovers",
+        sets: generateSets("chest-cable", 3, "10-12 reps"),
+      },
+      {
+        id: "chest-dips",
+        label: "Weighted Dips",
+        sets: generateSets("chest-dips", 3, "to failure"),
+      },
+    ],
   },
-  2: { 
-    label: "Shoulder Day", icon: "💪", autoComplete: false, 
+  2: {
+    label: "Shoulder Day",
+    icon: "💪",
+    autoComplete: false,
     exercises: [
-      { id: "shoulder-press", label: "Seated DB Overhead Press (4x8-10)" },
-      { id: "shoulder-lateral", label: "DB/Cable Lateral Raises (4x12-15)" },
-      { id: "shoulder-facepull", label: "Cable Face Pulls (4x15)" },
-      { id: "shoulder-shrug", label: "DB Shrugs (3x10-12)" }
-    ] 
+      {
+        id: "shoulder-press",
+        label: "Seated DB Overhead Press",
+        sets: generateSets("shoulder-press", 4, "8-10 reps"),
+      },
+      {
+        id: "shoulder-lateral",
+        label: "DB Lateral Raises",
+        sets: generateSets("shoulder-lateral", 4, "12-15 reps"),
+      },
+      {
+        id: "shoulder-facepull",
+        label: "Cable Face Pulls",
+        sets: generateSets("shoulder-facepull", 4, "15 reps"),
+      },
+      {
+        id: "shoulder-shrug",
+        label: "DB Shrugs",
+        sets: generateSets("shoulder-shrug", 3, "10-12 reps"),
+      },
+    ],
   },
-  3: { 
-    label: "Back Day", icon: "🏋️", autoComplete: false, 
+  3: {
+    label: "Back Day",
+    icon: "🏋️",
+    autoComplete: false,
     exercises: [
-      { id: "back-latpulldown", label: "Wide-Grip Lat Pulldowns (4x8-10)" },
-      { id: "back-row", label: "BB Bent-Over Rows (4x8-10)" },
-      { id: "back-cablerow", label: "Seated Cable Rows (3x10-12)" },
-      { id: "back-straightarm", label: "Straight-Arm Pulldowns (3x12-15)" }
-    ] 
+      {
+        id: "back-latpulldown",
+        label: "Wide-Grip Lat Pulldowns",
+        sets: generateSets("back-latpulldown", 4, "8-10 reps"),
+      },
+      {
+        id: "back-row",
+        label: "BB Bent-Over Rows",
+        sets: generateSets("back-row", 4, "8-10 reps"),
+      },
+      {
+        id: "back-cablerow",
+        label: "Seated Cable Rows",
+        sets: generateSets("back-cablerow", 3, "10-12 reps"),
+      },
+      {
+        id: "back-straightarm",
+        label: "Straight-Arm Pulldowns",
+        sets: generateSets("back-straightarm", 3, "12-15 reps"),
+      },
+    ],
   },
-  4: { 
-    label: "Arms Day", icon: "💪", autoComplete: false, 
+  4: {
+    label: "Arms Day",
+    icon: "💪",
+    autoComplete: false,
     exercises: [
-      { id: "arm-tricepext", label: "Overhead Cable Tricep Ext (4x10-12)" },
-      { id: "arm-bicep", label: "BB/EZ-Bar Bicep Curls (4x8-10)" },
-      { id: "arm-pushdown", label: "Triceps Rope Pushdowns (3x10-12)" },
-      { id: "arm-hammer", label: "DB Hammer Curls (3x10-12)" }
-    ] 
+      {
+        id: "arm-tricepext",
+        label: "Overhead Cable Tricep Ext",
+        sets: generateSets("arm-tricepext", 4, "10-12 reps"),
+      },
+      {
+        id: "arm-bicep",
+        label: "BB/EZ-Bar Bicep Curls",
+        sets: generateSets("arm-bicep", 4, "8-10 reps"),
+      },
+      {
+        id: "arm-pushdown",
+        label: "Triceps Rope Pushdowns",
+        sets: generateSets("arm-pushdown", 3, "10-12 reps"),
+      },
+      {
+        id: "arm-hammer",
+        label: "DB Hammer Curls",
+        sets: generateSets("arm-hammer", 3, "10-12 reps"),
+      },
+    ],
   },
-  5: { 
-    label: "Leg Day", icon: "🦵", autoComplete: false, 
+  5: {
+    label: "Leg Day",
+    icon: "🦵",
+    autoComplete: false,
     exercises: [
-      { id: "leg-squat", label: "BB Squats / Heavy Leg Press (4x8-10)" },
-      { id: "leg-rdl", label: "Romanian Deadlifts (4x8-10)" },
-      { id: "leg-ext", label: "Leg Extensions (3x12-15)" },
-      { id: "leg-calf", label: "Standing Calf Raises (4x15-20)" }
-    ] 
+      {
+        id: "leg-squat",
+        label: "BB Squats / Heavy Leg Press",
+        sets: generateSets("leg-squat", 4, "8-10 reps"),
+      },
+      {
+        id: "leg-rdl",
+        label: "Romanian Deadlifts",
+        sets: generateSets("leg-rdl", 4, "8-10 reps"),
+      },
+      {
+        id: "leg-ext",
+        label: "Leg Extensions",
+        sets: generateSets("leg-ext", 3, "12-15 reps"),
+      },
+      {
+        id: "leg-calf",
+        label: "Standing Calf Raises",
+        sets: generateSets("leg-calf", 4, "15-20 reps"),
+      },
+    ],
   },
-  6: { 
-    label: "Core / Recovery", icon: "🧘", autoComplete: false, 
+  6: {
+    label: "Core / Recovery",
+    icon: "🧘",
+    autoComplete: false,
     exercises: [
-      { id: "core-legraise", label: "Hanging Leg Raises (4x10-15)" },
-      { id: "core-crunch", label: "Weighted Cable Crunches (3x12-15)" },
-      { id: "core-plank", label: "Plank (3x60s)" },
-      { id: "core-cardio", label: "Zone 2 Cardio (15-20 min)" }
-    ] 
+      {
+        id: "core-legraise",
+        label: "Hanging Leg Raises",
+        sets: generateSets("core-legraise", 4, "10-15 reps"),
+      },
+      {
+        id: "core-crunch",
+        label: "Weighted Cable Crunches",
+        sets: generateSets("core-crunch", 3, "12-15 reps"),
+      },
+      {
+        id: "core-plank",
+        label: "Plank",
+        sets: generateSets("core-plank", 3, "60s"),
+      },
+      {
+        id: "core-cardio",
+        label: "Zone 2 Cardio",
+        sets: [{ id: "core-cardio-s1", label: "15-20 min session" }],
+      },
+    ],
   },
 };
 
@@ -96,21 +259,76 @@ export const MILESTONES = [
 ];
 
 /**
- * Returns all task IDs for a given day (including the workout task).
+ * Returns all LEAF task IDs for a given day (only checkable items).
+ * Parent IDs are excluded — only subtask IDs, set IDs, and simple task IDs.
  */
 export function getAllTaskIds(dayOfWeek) {
   const taskIds = [];
+
+  // Module tasks
   MODULES.forEach((mod) => {
-    mod.tasks.forEach((t) => taskIds.push(t.id));
+    mod.tasks.forEach((task) => {
+      if (task.subtasks && task.subtasks.length > 0) {
+        // Parent with subtasks — collect subtask IDs only
+        task.subtasks.forEach((sub) => taskIds.push(sub.id));
+      } else {
+        // Simple leaf task
+        taskIds.push(task.id);
+      }
+    });
   });
-  taskIds.push("workout");
+
+  // Workout sets
+  const workout = WORKOUT_SCHEDULE[dayOfWeek];
+  if (workout && !workout.autoComplete) {
+    workout.exercises.forEach((exercise) => {
+      if (exercise.sets && exercise.sets.length > 0) {
+        exercise.sets.forEach((set) => taskIds.push(set.id));
+      }
+    });
+  }
+
   return taskIds;
 }
 
 /**
- * Returns the total number of tasks for a given day.
- * Always 10: 6 (morning) + 3 (evening) + 1 (workout).
+ * Returns the total number of leaf tasks for a given day.
+ * This varies by day due to different workout set counts.
  */
-export function getTotalTaskCount() {
-  return 10;
+export function getTotalTaskCount(dayOfWeek) {
+  return getAllTaskIds(dayOfWeek).length;
+}
+
+/**
+ * Builds a map of parent ID → child IDs for quick lookup during toggle.
+ * Includes both module subtask parents and workout exercise parents.
+ */
+export function getParentChildMap(dayOfWeek) {
+  const map = {};
+
+  // Module task parents
+  MODULES.forEach((mod) => {
+    mod.tasks.forEach((task) => {
+      if (task.subtasks && task.subtasks.length > 0) {
+        map[task.id] = task.subtasks.map((s) => s.id);
+      }
+    });
+  });
+
+  // Workout exercise parents → set IDs
+  const workout = WORKOUT_SCHEDULE[dayOfWeek];
+  if (workout && !workout.autoComplete) {
+    const allSetIds = [];
+    workout.exercises.forEach((exercise) => {
+      if (exercise.sets && exercise.sets.length > 0) {
+        const setIds = exercise.sets.map((s) => s.id);
+        map[exercise.id] = setIds;
+        allSetIds.push(...setIds);
+      }
+    });
+    // "workout" parent → all set IDs across all exercises
+    map["workout"] = allSetIds;
+  }
+
+  return map;
 }

@@ -10,11 +10,18 @@ import {
   getTotalTaskCount,
   WORKOUT_SCHEDULE,
   MILESTONES,
+  getParentChildMap,
+  MODULES,
 } from "../lib/tasks";
 
 /**
  * Core custom hook that manages all habit tracker state.
  * Loads from MongoDB on mount, syncs changes back to MongoDB + localStorage.
+ *
+ * Sub-task architecture:
+ * - Only leaf tasks (subtasks, sets, simple tasks) are directly toggleable.
+ * - Parent tasks auto-complete when all their children are checked.
+ * - Daily progress counts only leaf-level completions.
  */
 export function useHabitTracker() {
   const [state, setState] = useState({
@@ -55,7 +62,49 @@ export function useHabitTracker() {
   // Auto-complete Sunday rest day after state is loaded
   useEffect(() => {
     if (!isLoading && workout.autoComplete && !todayData.tasks["workout"]) {
-      toggleTask("workout");
+      // For rest day, just mark workout as complete directly
+      setState((prev) => {
+        const todayKey = getTodayKey();
+        const prevToday = prev.history[todayKey] || {
+          tasks: {},
+          allCompleted: false,
+        };
+        const newTasks = { ...prevToday.tasks, workout: true };
+
+        const allIds = getAllTaskIds(new Date().getDay());
+        const completedCount = allIds.filter((id) => newTasks[id]).length;
+        const total = getTotalTaskCount(new Date().getDay());
+        const allCompleted = completedCount >= total;
+
+        let newStreak = prev.streakCount;
+        let newLastCompleted = prev.lastCompletedDate;
+        let newMilestones = [...prev.milestones];
+
+        if (allCompleted && !prevToday.allCompleted) {
+          newStreak = prev.streakCount + 1;
+          newLastCompleted = todayKey;
+          MILESTONES.forEach((m) => {
+            if (newStreak >= m.days && !newMilestones.includes(m.days)) {
+              newMilestones.push(m.days);
+            }
+          });
+        }
+
+        return {
+          ...prev,
+          streakCount: newStreak,
+          lastCompletedDate: newLastCompleted,
+          milestones: newMilestones,
+          history: {
+            ...prev.history,
+            [todayKey]: {
+              tasks: newTasks,
+              allCompleted,
+              completedAt: allCompleted ? new Date().toISOString() : null,
+            },
+          },
+        };
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading]);
@@ -78,7 +127,8 @@ export function useHabitTracker() {
   }, [today]);
 
   /**
-   * Toggles a task's completion status for today.
+   * Toggles a leaf task's completion status for today.
+   * After toggling, propagates upward to auto-complete parents.
    */
   const toggleTask = useCallback(
     (taskId) => {
@@ -91,24 +141,46 @@ export function useHabitTracker() {
         const newTasks = { ...prevToday.tasks };
         newTasks[taskId] = !newTasks[taskId];
 
-        const dayOfWeek = new Date().getDay();
-        const workoutData = WORKOUT_SCHEDULE[dayOfWeek];
-        const exerciseIds = workoutData.exercises?.map(e => e.id) || [];
+        const currentDayOfWeek = new Date().getDay();
+        const parentChildMap = getParentChildMap(currentDayOfWeek);
 
-        // If toggling a sub-exercise, update the main "workout" status
-        if (exerciseIds.includes(taskId)) {
-          const allExercisesDone = exerciseIds.every(id => newTasks[id]);
-          newTasks["workout"] = allExercisesDone;
-        } 
-        // If toggling the main workout directly, sync all sub-exercises
-        else if (taskId === "workout") {
-          const isDone = newTasks["workout"];
-          exerciseIds.forEach(id => { newTasks[id] = isDone; });
+        // Propagate upward: check if any parent should auto-complete
+        // For module tasks: subtask → parent task
+        MODULES.forEach((mod) => {
+          mod.tasks.forEach((task) => {
+            if (task.subtasks && task.subtasks.length > 0) {
+              const subtaskIds = task.subtasks.map((s) => s.id);
+              if (subtaskIds.includes(taskId)) {
+                newTasks[task.id] = subtaskIds.every((id) => newTasks[id]);
+              }
+            }
+          });
+        });
+
+        // For workout: set → exercise → workout
+        const workoutData = WORKOUT_SCHEDULE[currentDayOfWeek];
+        if (workoutData && !workoutData.autoComplete) {
+          const allExercisesDone = [];
+
+          workoutData.exercises.forEach((exercise) => {
+            const setIds = exercise.sets?.map((s) => s.id) || [];
+            if (setIds.includes(taskId) || setIds.some((id) => id === taskId)) {
+              // A set was toggled — check if all sets in this exercise are done
+              newTasks[exercise.id] = setIds.every((id) => newTasks[id]);
+            }
+            allExercisesDone.push(
+              setIds.length > 0 && setIds.every((id) => newTasks[id])
+            );
+          });
+
+          // Check if all exercises (= all sets) are done
+          newTasks["workout"] = allExercisesDone.every(Boolean);
         }
 
-        const allIds = getAllTaskIds(new Date().getDay());
+        // Count leaf completions
+        const allIds = getAllTaskIds(currentDayOfWeek);
         const completedCount = allIds.filter((id) => newTasks[id]).length;
-        const total = getTotalTaskCount();
+        const total = getTotalTaskCount(currentDayOfWeek);
         const allCompleted = completedCount >= total;
 
         let newStreak = prev.streakCount;

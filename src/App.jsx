@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useHabitTracker } from "./hooks/useHabitTracker";
-import { MODULES } from "./lib/tasks";
+import { MODULES, getTotalTaskCount } from "./lib/tasks";
 import StreakCounter from "./components/StreakCounter";
 import DeathClock from "./components/DeathClock";
 import TaskModule from "./components/TaskModule";
@@ -26,6 +26,7 @@ export default function App() {
   const {
     state,
     today,
+    dayOfWeek,
     todayData,
     workout,
     toggleTask,
@@ -36,7 +37,7 @@ export default function App() {
   } = useHabitTracker();
 
   const completedCount = getCompletionCount();
-  const totalTasks = 10;
+  const totalTasks = getTotalTaskCount(dayOfWeek);
 
   // Format today's date for display
   const displayDate = new Date().toLocaleDateString("en-US", {
