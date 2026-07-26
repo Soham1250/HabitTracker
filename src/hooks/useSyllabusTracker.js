@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useMemo, useCallback } from "react";
 import { QUANT_SYLLABUS, REASONING_SEQUENTIAL } from "../lib/syllabus";
 
 // Isolated storage key for Syllabus Tracker
-const SYLLABUS_STORAGE_KEY = "habit_tracker_syllabus_state";
+export const SYLLABUS_STORAGE_KEY = "habit_tracker_syllabus_state";
 
-function getTodayKey() {
+export function getTodayKey() {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -12,7 +12,7 @@ function getTodayKey() {
   return `${year}-${month}-${day}`;
 }
 
-const defaultState = {
+export const defaultState = {
   topics: {}, // topicId -> { consecutiveDays: number, isMastered: boolean }
   streaks: {}, // topicId -> currentStreak (number)
   completedChapters: [], // [{ chapterId, title, completedAt: string }]
@@ -20,8 +20,8 @@ const defaultState = {
 };
 
 // Initialize default state for all sequential topics if not present
-function initializeTopics(state) {
-  const newState = { ...state };
+export function initializeTopics(state) {
+  const newState = { ...(state || {}) };
   if (!newState.topics) newState.topics = {};
   if (!newState.streaks) newState.streaks = {};
   if (!newState.completedChapters) newState.completedChapters = [];
@@ -40,119 +40,141 @@ function initializeTopics(state) {
   return newState;
 }
 
-export function useSyllabusTracker() {
-  const [state, setState] = useState(defaultState);
-  const [isLoading, setIsLoading] = useState(true);
-  const isInitialized = useRef(false);
+export function mergeSyllabusStates(remoteState, localState) {
+  let base = remoteState;
+  if (!base || (!base.topics && !base.completedChapters)) {
+    base = localState || defaultState;
+  }
+  const merged = initializeTopics(base);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(SYLLABUS_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setState(initializeTopics(parsed));
-      } else {
-        setState(initializeTopics(defaultState));
-      }
-    } catch (err) {
-      console.error("Failed to load syllabus state:", err);
-      setState(initializeTopics(defaultState));
-    } finally {
-      setIsLoading(false);
-      isInitialized.current = true;
+  if (localState) {
+    if (localState.completedChapters && Array.isArray(localState.completedChapters)) {
+      const existingIds = new Set(merged.completedChapters.map(c => c.chapterId));
+      localState.completedChapters.forEach(ch => {
+        if (!existingIds.has(ch.chapterId)) {
+          merged.completedChapters.push(ch);
+        }
+      });
     }
-  }, []);
+    if (localState.topics) {
+      Object.keys(localState.topics).forEach(topicId => {
+        const localTopic = localState.topics[topicId];
+        const remoteTopic = merged.topics[topicId] || { consecutiveDays: 0, isMastered: false };
+        merged.topics[topicId] = {
+          consecutiveDays: Math.max(localTopic.consecutiveDays || 0, remoteTopic.consecutiveDays || 0),
+          isMastered: localTopic.isMastered || remoteTopic.isMastered || false,
+        };
+      });
+    }
+    if (localState.streaks) {
+      Object.keys(localState.streaks).forEach(topicId => {
+        const localStreak = localState.streaks[topicId] || 0;
+        const remoteStreak = merged.streaks[topicId] || 0;
+        merged.streaks[topicId] = Math.max(localStreak, remoteStreak);
+      });
+    }
+  }
 
-  useEffect(() => {
-    if (!isInitialized.current) return;
-    localStorage.setItem(SYLLABUS_STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
+  return merged;
+}
+
+export function useSyllabusTracker(syllabusState, updateSyllabusState) {
+  const state = useMemo(() => {
+    return initializeTopics(syllabusState || defaultState);
+  }, [syllabusState]);
 
   // Mark a successful day for a sequential topic
   const incrementTopicDay = useCallback((topicId, title) => {
-    setState(prev => {
-      const topicData = prev.topics[topicId] || { consecutiveDays: 0, isMastered: false };
-      
-      // If already mastered, do nothing
-      if (topicData.isMastered) return prev;
+    const topicData = state.topics[topicId] || { consecutiveDays: 0, isMastered: false };
+    
+    // If already mastered, do nothing
+    if (topicData.isMastered) return;
 
-      let newConsecutiveDays = topicData.consecutiveDays + 1;
-      let isMastered = false;
-      const newCompletedChapters = [...prev.completedChapters];
+    let newConsecutiveDays = topicData.consecutiveDays + 1;
+    let isMastered = false;
+    const newCompletedChapters = [...(state.completedChapters || [])];
 
-      if (newConsecutiveDays >= 3) {
-        isMastered = true;
-        // Check if we already logged it (safeguard)
-        if (!newCompletedChapters.some(c => c.chapterId === topicId)) {
-          newCompletedChapters.unshift({
-            chapterId: topicId,
-            title: title,
-            completedAt: new Date().toISOString(),
-          });
-        }
+    if (newConsecutiveDays >= 3) {
+      isMastered = true;
+      if (!newCompletedChapters.some(c => c.chapterId === topicId)) {
+        newCompletedChapters.unshift({
+          chapterId: topicId,
+          title: title,
+          completedAt: new Date().toISOString(),
+        });
       }
+    }
 
-      return {
-        ...prev,
-        topics: {
-          ...prev.topics,
-          [topicId]: {
-            consecutiveDays: newConsecutiveDays,
-            isMastered,
-          }
-        },
-        completedChapters: newCompletedChapters,
-        lastUpdatedDate: getTodayKey(),
-      };
-    });
-  }, []);
+    const nextSyllabusState = {
+      ...state,
+      topics: {
+        ...state.topics,
+        [topicId]: {
+          consecutiveDays: newConsecutiveDays,
+          isMastered,
+        }
+      },
+      completedChapters: newCompletedChapters,
+      lastUpdatedDate: getTodayKey(),
+    };
+
+    if (updateSyllabusState) {
+      updateSyllabusState(nextSyllabusState);
+    }
+  }, [state, updateSyllabusState]);
 
   // Reset progress for a topic (if they fail the 90% Vanguard Metric)
   const resetTopicDay = useCallback((topicId) => {
-    setState(prev => {
-      const topicData = prev.topics[topicId];
-      if (!topicData || topicData.isMastered) return prev;
-      
-      return {
-        ...prev,
-        topics: {
-          ...prev.topics,
-          [topicId]: { ...topicData, consecutiveDays: 0 }
-        }
-      };
-    });
-  }, []);
+    const topicData = state.topics[topicId];
+    if (!topicData || topicData.isMastered) return;
+
+    const nextSyllabusState = {
+      ...state,
+      topics: {
+        ...state.topics,
+        [topicId]: { ...topicData, consecutiveDays: 0 }
+      }
+    };
+
+    if (updateSyllabusState) {
+      updateSyllabusState(nextSyllabusState);
+    }
+  }, [state, updateSyllabusState]);
 
   // Increment continuous loop streak
   const incrementContinuousStreak = useCallback((topicId) => {
-    setState(prev => {
-      const currentStreak = prev.streaks[topicId] || 0;
-      return {
-        ...prev,
-        streaks: {
-          ...prev.streaks,
-          [topicId]: currentStreak + 1
-        }
-      };
-    });
-  }, []);
+    const currentStreak = (state.streaks && state.streaks[topicId]) || 0;
+    const nextSyllabusState = {
+      ...state,
+      streaks: {
+        ...state.streaks,
+        [topicId]: currentStreak + 1
+      }
+    };
+
+    if (updateSyllabusState) {
+      updateSyllabusState(nextSyllabusState);
+    }
+  }, [state, updateSyllabusState]);
 
   // Decrement or reset continuous loop streak
   const resetContinuousStreak = useCallback((topicId) => {
-    setState(prev => {
-      return {
-        ...prev,
-        streaks: {
-          ...prev.streaks,
-          [topicId]: 0
-        }
-      };
-    });
-  }, []);
+    const nextSyllabusState = {
+      ...state,
+      streaks: {
+        ...state.streaks,
+        [topicId]: 0
+      }
+    };
+
+    if (updateSyllabusState) {
+      updateSyllabusState(nextSyllabusState);
+    }
+  }, [state, updateSyllabusState]);
 
   return {
     state,
-    isLoading,
+    isLoading: false,
     incrementTopicDay,
     resetTopicDay,
     incrementContinuousStreak,

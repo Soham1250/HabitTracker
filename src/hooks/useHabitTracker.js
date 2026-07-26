@@ -13,6 +13,10 @@ import {
   getParentChildMap,
   MODULES,
 } from "../lib/tasks";
+import {
+  SYLLABUS_STORAGE_KEY,
+  mergeSyllabusStates,
+} from "./useSyllabusTracker";
 
 /**
  * Core custom hook that manages all habit tracker state.
@@ -29,6 +33,7 @@ export function useHabitTracker() {
     lastCompletedDate: null,
     history: {},
     milestones: [],
+    syllabusState: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const isInitialized = useRef(false);
@@ -44,10 +49,23 @@ export function useHabitTracker() {
       try {
         const loaded = await loadState();
         const checked = checkMidnightReset(loaded);
-        setState(checked);
-        // Save back if reset happened
-        if (checked.streakCount !== loaded.streakCount) {
-          await saveState(checked);
+
+        let localSyllabus = null;
+        try {
+          const stored = localStorage.getItem(SYLLABUS_STORAGE_KEY);
+          if (stored) localSyllabus = JSON.parse(stored);
+        } catch (e) {}
+
+        const mergedSyllabus = mergeSyllabusStates(checked.syllabusState, localSyllabus);
+        const finalState = {
+          ...checked,
+          syllabusState: mergedSyllabus,
+        };
+
+        setState(finalState);
+        // Save back if reset happened or syllabusState wasn't in DB yet
+        if (checked.streakCount !== loaded.streakCount || !checked.syllabusState) {
+          await saveState(finalState);
         }
       } catch (err) {
         console.error("Failed to load state:", err);
@@ -230,6 +248,17 @@ export function useHabitTracker() {
     saveState(checked);
   }, []);
 
+  const updateSyllabusState = useCallback((newSyllabusState) => {
+    setState((prev) => {
+      const nextState = {
+        ...prev,
+        syllabusState: newSyllabusState,
+      };
+      saveState(nextState);
+      return nextState;
+    });
+  }, []);
+
   return {
     state,
     today,
@@ -241,5 +270,6 @@ export function useHabitTracker() {
     isAllComplete: todayData.allCompleted,
     isLoading,
     replaceState,
+    updateSyllabusState,
   };
 }

@@ -41,6 +41,7 @@ export default function App() {
     isAllComplete,
     isLoading: isDailyLoading,
     replaceState,
+    updateSyllabusState,
   } = useHabitTracker();
 
   const {
@@ -50,7 +51,7 @@ export default function App() {
     resetTopicDay,
     incrementContinuousStreak,
     resetContinuousStreak
-  } = useSyllabusTracker();
+  } = useSyllabusTracker(dailyState.syllabusState, updateSyllabusState);
 
   const completedCount = getCompletionCount();
   const totalTasks = getTotalTaskCount(dayOfWeek);

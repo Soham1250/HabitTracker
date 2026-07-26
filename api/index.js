@@ -85,6 +85,7 @@ app.get("/api/state", requireAuth, async (req, res) => {
         lastCompletedDate: null,
         history: {},
         milestones: [],
+        syllabusState: null,
       });
     }
 

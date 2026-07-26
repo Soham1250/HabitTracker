@@ -35,6 +35,7 @@ function getDefaultState() {
     lastCompletedDate: null,
     history: {},
     milestones: [],
+    syllabusState: null,
   };
 }
 
@@ -120,6 +121,7 @@ function normalizeState(parsed) {
     lastCompletedDate: parsed.lastCompletedDate ?? null,
     history: parsed.history ?? {},
     milestones: parsed.milestones ?? [],
+    syllabusState: parsed.syllabusState ?? null,
   };
 }
 
