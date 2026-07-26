@@ -15,13 +15,14 @@ import Login from "./components/Login";
 import SyllabusTracker from "./components/SyllabusTracker";
 import SyllabusProgress from "./components/SyllabusProgress";
 import AlphanumericTrainer from "./components/AlphanumericTrainer";
+import MathTrainer from "./components/MathTrainer";
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(
     !!localStorage.getItem("auth_token")
   );
   
-  const [activeTab, setActiveTab] = useState("daily"); // "daily" | "syllabus" | "alphanumeric"
+  const [activeTab, setActiveTab] = useState("daily"); // "daily" | "syllabus" | "alphanumeric" | "math"
 
   useEffect(() => {
     const handleUnauthorized = () => setIsAuthenticated(false);
@@ -101,7 +102,7 @@ export default function App() {
             <div className="flex bg-surface-elevated p-1 rounded-lg border border-white/5">
               <button
                 onClick={() => setActiveTab("daily")}
-                className={`px-4 py-2 rounded-md text-xs font-mono uppercase tracking-widest transition-all ${
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs font-mono uppercase tracking-widest transition-all ${
                   activeTab === "daily" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
                 }`}
               >
@@ -109,7 +110,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => setActiveTab("syllabus")}
-                className={`px-4 py-2 rounded-md text-xs font-mono uppercase tracking-widest transition-all ${
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs font-mono uppercase tracking-widest transition-all ${
                   activeTab === "syllabus" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
                 }`}
               >
@@ -117,11 +118,19 @@ export default function App() {
               </button>
               <button
                 onClick={() => setActiveTab("alphanumeric")}
-                className={`px-4 py-2 rounded-md text-xs font-mono uppercase tracking-widest transition-all ${
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs font-mono uppercase tracking-widest transition-all ${
                   activeTab === "alphanumeric" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
                 }`}
               >
                 Alphanumeric
+              </button>
+              <button
+                onClick={() => setActiveTab("math")}
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs font-mono uppercase tracking-widest transition-all ${
+                  activeTab === "math" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                Math Practice
               </button>
             </div>
             <SettingsMenu onImport={replaceState} state={dailyState} />
@@ -201,8 +210,10 @@ export default function App() {
             syllabusState={syllabusState} 
             actions={{ incrementTopicDay, resetTopicDay, incrementContinuousStreak, resetContinuousStreak }} 
           />
-        ) : (
+        ) : activeTab === "alphanumeric" ? (
           <AlphanumericTrainer />
+        ) : (
+          <MathTrainer />
         )}
 
         {/* Footer */}
