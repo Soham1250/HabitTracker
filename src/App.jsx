@@ -14,13 +14,14 @@ import QuoteOfDay from "./components/QuoteOfDay";
 import Login from "./components/Login";
 import SyllabusTracker from "./components/SyllabusTracker";
 import SyllabusProgress from "./components/SyllabusProgress";
+import AlphanumericTrainer from "./components/AlphanumericTrainer";
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(
     !!localStorage.getItem("auth_token")
   );
   
-  const [activeTab, setActiveTab] = useState("daily"); // "daily" | "syllabus"
+  const [activeTab, setActiveTab] = useState("daily"); // "daily" | "syllabus" | "alphanumeric"
 
   useEffect(() => {
     const handleUnauthorized = () => setIsAuthenticated(false);
@@ -114,6 +115,14 @@ export default function App() {
               >
                 Syllabus
               </button>
+              <button
+                onClick={() => setActiveTab("alphanumeric")}
+                className={`px-4 py-2 rounded-md text-xs font-mono uppercase tracking-widest transition-all ${
+                  activeTab === "alphanumeric" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                Alphanumeric
+              </button>
             </div>
             <SettingsMenu onImport={replaceState} state={dailyState} />
           </div>
@@ -187,11 +196,13 @@ export default function App() {
               <Heatmap history={dailyState.history} />
             </div>
           </div>
-        ) : (
+        ) : activeTab === "syllabus" ? (
           <SyllabusTracker 
             syllabusState={syllabusState} 
             actions={{ incrementTopicDay, resetTopicDay, incrementContinuousStreak, resetContinuousStreak }} 
           />
+        ) : (
+          <AlphanumericTrainer />
         )}
 
         {/* Footer */}
