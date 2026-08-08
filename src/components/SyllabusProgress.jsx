@@ -3,12 +3,10 @@ import { getTotalSequentialTopics } from "../lib/syllabus";
 export default function SyllabusProgress({ completedChapters }) {
   const totalTopics = getTotalSequentialTopics();
   const completedCount = completedChapters.length;
-  const remainingCount = totalTopics - completedCount;
   
   const percentage = totalTopics === 0 ? 0 : Math.round((completedCount / totalTopics) * 100);
 
   // SVG Pie Chart calculations (Radius 15.91549431 gives circumference of 100)
-  const radius = 15.91549431;
   const strokeDasharray = `${percentage} ${100 - percentage}`;
 
   return (

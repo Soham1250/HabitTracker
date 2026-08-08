@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from "react";
-import { QUANT_SYLLABUS, REASONING_SEQUENTIAL } from "../lib/syllabus";
+import { QUANT_SYLLABUS, REASONING_SEQUENTIAL, IT_SYLLABUS } from "../lib/syllabus";
 
 // Isolated storage key for Syllabus Tracker
 export const SYLLABUS_STORAGE_KEY = "habit_tracker_syllabus_state";
@@ -28,7 +28,8 @@ export function initializeTopics(state) {
   
   const allSequential = [
     ...QUANT_SYLLABUS.flatMap(p => p.topics),
-    ...REASONING_SEQUENTIAL.flatMap(p => p.topics)
+    ...REASONING_SEQUENTIAL.flatMap(p => p.topics),
+    ...IT_SYLLABUS.flatMap(p => p.topics)
   ];
   
   allSequential.forEach(t => {

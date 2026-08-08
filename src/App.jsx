@@ -87,7 +87,7 @@ export default function App() {
       {/* Warning overlay (9 PM+) */}
       <WarningOverlay isAllComplete={isAllComplete} />
 
-      <div className="min-h-dvh bg-bg px-4 py-6 md:px-8 md:py-10 max-w-5xl mx-auto">
+      <div className="min-h-dvh bg-bg px-4 py-6 md:px-8 md:py-10 max-w-7xl mx-auto">
         <QuoteOfDay />
         {/* Header row: title + date + settings */}
         <header className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">

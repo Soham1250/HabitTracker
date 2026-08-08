@@ -75,8 +75,27 @@ export const REASONING_CONTINUOUS = [
   { id: "reas-cont-5", title: "Designation/Hierarchy Sequencing" },
 ];
 
+export const IT_SYLLABUS = [
+  {
+    phase: "IT Domain Subjects",
+    description: "Core Computer Science & Information Technology Subjects.",
+    topics: [
+      { id: "it-1", title: "Database Concepts" },
+      { id: "it-2", title: "SQL Queries" },
+      { id: "it-3", title: "Programming Concepts" },
+      { id: "it-4", title: "Data Analytics" },
+      { id: "it-5", title: "Algorithms" },
+      { id: "it-6", title: "Networking" },
+      { id: "it-7", title: "Cyber Security" },
+      { id: "it-8", title: "Data Warehousing" },
+      { id: "it-9", title: "Shell Programming" },
+    ]
+  }
+];
+
 export function getTotalSequentialTopics() {
   const quantTotal = QUANT_SYLLABUS.reduce((acc, phase) => acc + phase.topics.length, 0);
   const reasTotal = REASONING_SEQUENTIAL.reduce((acc, phase) => acc + phase.topics.length, 0);
-  return quantTotal + reasTotal;
+  const itTotal = IT_SYLLABUS.reduce((acc, phase) => acc + phase.topics.length, 0);
+  return quantTotal + reasTotal + itTotal;
 }
