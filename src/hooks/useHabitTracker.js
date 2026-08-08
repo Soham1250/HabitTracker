@@ -50,13 +50,16 @@ export function useHabitTracker() {
         const loaded = await loadState();
         const checked = checkMidnightReset(loaded);
 
-        let localSyllabus = null;
-        try {
-          const stored = localStorage.getItem(SYLLABUS_STORAGE_KEY);
-          if (stored) localSyllabus = JSON.parse(stored);
-        } catch (e) {}
+        // Primary source of truth: loaded state from MongoDB/localStorage cache
+        let syllabus = checked.syllabusState;
+        if (!syllabus) {
+          try {
+            const stored = localStorage.getItem(SYLLABUS_STORAGE_KEY);
+            if (stored) syllabus = JSON.parse(stored);
+          } catch (e) {}
+        }
 
-        const mergedSyllabus = mergeSyllabusStates(checked.syllabusState, localSyllabus);
+        const mergedSyllabus = initializeTopics(syllabus || defaultState);
         const finalState = {
           ...checked,
           syllabusState: mergedSyllabus,
