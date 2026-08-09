@@ -16,13 +16,14 @@ import SyllabusTracker from "./components/SyllabusTracker";
 import SyllabusProgress from "./components/SyllabusProgress";
 import AlphanumericTrainer from "./components/AlphanumericTrainer";
 import MathTrainer from "./components/MathTrainer";
+import MasterITHub from "./components/dataGuardian/MasterITHub";
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(
     !!localStorage.getItem("auth_token")
   );
   
-  const [activeTab, setActiveTab] = useState("daily"); // "daily" | "syllabus" | "alphanumeric" | "math"
+  const [activeTab, setActiveTab] = useState("daily"); // "daily" | "syllabus" | "alphanumeric" | "math" | "masterit"
 
   useEffect(() => {
     const handleUnauthorized = () => setIsAuthenticated(false);
@@ -133,6 +134,14 @@ export default function App() {
               >
                 Math Practice
               </button>
+              <button
+                onClick={() => setActiveTab("masterit")}
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs font-mono uppercase tracking-widest transition-all ${
+                  activeTab === "masterit" ? "bg-indigo-600 text-white font-bold" : "text-indigo-400 hover:text-indigo-300"
+                }`}
+              >
+                Master IT
+              </button>
             </div>
             <SettingsMenu onImport={replaceState} state={dailyState} />
           </div>
@@ -213,8 +222,10 @@ export default function App() {
           />
         ) : activeTab === "alphanumeric" ? (
           <AlphanumericTrainer />
-        ) : (
+        ) : activeTab === "math" ? (
           <MathTrainer />
+        ) : (
+          <MasterITHub />
         )}
 
         {/* Footer */}
